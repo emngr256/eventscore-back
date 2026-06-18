@@ -30,21 +30,33 @@ model User {
   createdEvents Event[]     @relation("EventCreator")
   submissions  Submission[]
   scores       Score[]
+  juryComments JuryComment[]
   juryEvents   EventJury[]
 
   @@map("users")
 }
 
 model Event {
-  id          String       @id @default(uuid())
-  title       String
-  description String?
-  rules       String?
-  deadline    DateTime
-  isPublished Boolean      @default(true) @map("is_published")
-  anonymous   Boolean      @default(false)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id                    String       @id @default(uuid())
+  title                 String
+  description           String?
+  rules                 String?
+  deadline              DateTime
+  announcementUrl        String?      @map("announcement_url")
+  certificateTemplateUrl String?      @map("certificate_template_url")
+  certificateTextColor   String?      @default("#78350f") @map("certificate_text_color")
+  certificateTextSize    Float?       @default(1.0) @map("certificate_text_size")
+  certificateOverlayOpacity Float?    @default(0) @map("certificate_overlay_opacity")
+  certificateContentPadding Int?      @default(48) @map("certificate_content_padding")
+  certificateTopPadding     Int?      @default(32) @map("certificate_top_padding")
+  certificateBottomPadding  Int?      @default(32) @map("certificate_bottom_padding")
+  certificateTopOffsetX     Int?      @default(0) @map("certificate_top_offset_x")
+  certificateBottomOffsetX  Int?      @default(0) @map("certificate_bottom_offset_x")
+  socialPostUrl         String?      @map("social_post_url")
+  isPublished           Boolean      @default(true) @map("is_published")
+  anonymous             Boolean      @default(false)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
 
   createdById String       @map("created_by_id")
   createdBy   User         @relation("EventCreator", fields: [createdById], references: [id])
@@ -84,7 +96,8 @@ model Submission {
   captainId String   @map("captain_id")
   captain   User     @relation(fields: [captainId], references: [id])
 
-  scores    Score[]
+  scores       Score[]
+  juryComments JuryComment[]
 
   @@map("submissions")
 }
@@ -106,7 +119,6 @@ model Criteria {
 model Score {
   id          String   @id @default(uuid())
   value       Int
-  comment     String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -121,4 +133,18 @@ model Score {
 
   @@unique([submissionId, juryId, criteriaId])
   @@map("scores")
+}
+
+model JuryComment {
+  id        String   @id @default(uuid())
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  submissionId String     @map("submission_id")
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  juryId String @map("jury_id")
+  jury   User   @relation(fields: [juryId], references: [id])
+
+  @@map("jury_comments")
 }

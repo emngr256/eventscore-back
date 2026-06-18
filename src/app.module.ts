@@ -6,6 +6,7 @@ import { EventsModule } from './events/events.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ScoresModule } from './scores/scores.module.js';
 import { SubmissionsModule } from './submissions/submissions.module.js';
+import { UploadModule } from './upload/upload.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
@@ -15,6 +16,7 @@ import { UsersModule } from './users/users.module.js';
     EventsModule,
     SubmissionsModule,
     ScoresModule,
+    UploadModule,
     UsersModule,
   ],
   controllers: [AppController],

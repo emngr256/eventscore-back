@@ -8,7 +8,10 @@ import { JwtPayload } from './auth.types.js';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly prisma: PrismaService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: (req) => {
+        if (req?.cookies?.access_token) return req.cookies.access_token;
+        return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+      },
       secretOrKey: process.env.JWT_SECRET || 'dev-secret-change-me',
     });
   }

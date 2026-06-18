@@ -55,7 +55,7 @@ export class AuthService {
     const tokens = this.generateTokens(payload);
 
     return {
-      token: tokens.accessToken,
+      accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user: {
         id: user.id,
@@ -90,7 +90,7 @@ export class AuthService {
     const tokens = this.generateTokens(payload);
 
     return {
-      token: tokens.accessToken,
+      accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user: {
         id: user.id,
@@ -98,6 +98,19 @@ export class AuthService {
         name: user.name,
         role: user.role,
       },
+    };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
     };
   }
 

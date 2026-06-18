@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsInt, IsUUID, Min } from 'class-validator';
 
 export class CreateScoreDto {
   @IsUUID()
@@ -10,8 +10,4 @@ export class CreateScoreDto {
   @IsInt()
   @Min(0)
   value: number;
-
-  @IsString()
-  @IsOptional()
-  comment?: string;
 }

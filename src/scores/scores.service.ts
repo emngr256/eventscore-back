@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateScoreDto } from './dto/create-score.dto.js';
+import { CreateJuryCommentDto } from './dto/create-jury-comment.dto.js';
 
 @Injectable()
 export class ScoresService {
@@ -47,11 +49,9 @@ export class ScoresService {
       },
       update: {
         value: dto.value,
-        comment: dto.comment,
       },
       create: {
         value: dto.value,
-        comment: dto.comment,
         submissionId: dto.submissionId,
         juryId,
         criteriaId: dto.criteriaId,
@@ -75,6 +75,29 @@ export class ScoresService {
     return score;
   }
 
+  async createComment(dto: CreateJuryCommentDto, juryId: string) {
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: dto.submissionId },
+    });
+
+    if (!submission) {
+      throw new NotFoundException(
+        `Submission with id "${dto.submissionId}" not found`,
+      );
+    }
+
+    return this.prisma.juryComment.create({
+      data: {
+        text: dto.text,
+        submissionId: dto.submissionId,
+        juryId,
+      },
+      include: {
+        jury: { select: { id: true, name: true } },
+      },
+    });
+  }
+
   async getEventRating(eventId: string) {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
@@ -90,6 +113,12 @@ export class ScoresService {
               select: { id: true, name: true, maxScore: true },
             },
           },
+        },
+        juryComments: {
+          include: {
+            jury: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -125,6 +154,12 @@ export class ScoresService {
         teamName: event?.anonymous ? `Команда ${submission.teamName.slice(0, 1)}***` : submission.teamName,
         totalScore: Math.round(totalScore * 100) / 100,
         criteriaScores,
+        juryComments: submission.juryComments.map((jc) => ({
+          id: jc.id,
+          text: jc.text,
+          juryName: jc.jury.name,
+          createdAt: jc.createdAt,
+        })),
       };
     });
 

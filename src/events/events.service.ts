@@ -32,6 +32,17 @@ export class EventsService {
           title: dto.title,
           description: dto.description,
           rules: dto.rules,
+          announcementUrl: dto.announcementUrl,
+          certificateTemplateUrl: dto.certificateTemplateUrl,
+          certificateTextColor: dto.certificateTextColor,
+          certificateTextSize: dto.certificateTextSize,
+          certificateOverlayOpacity: dto.certificateOverlayOpacity,
+          certificateContentPadding: dto.certificateContentPadding,
+          certificateTopPadding: dto.certificateTopPadding,
+          certificateBottomPadding: dto.certificateBottomPadding,
+          certificateTopOffsetX: dto.certificateTopOffsetX,
+          certificateBottomOffsetX: dto.certificateBottomOffsetX,
+          socialPostUrl: dto.socialPostUrl,
           deadline: new Date(dto.deadline),
           createdById: userId,
         },
@@ -77,6 +88,9 @@ export class EventsService {
           include: {
             scores: { take: 1 },
             captain: { select: { id: true, name: true } },
+            juryComments: {
+              include: { jury: { select: { id: true, name: true } } },
+            },
           },
         },
         juryMembers: {
@@ -100,6 +114,18 @@ export class EventsService {
       if (dto.title !== undefined) updateData.title = dto.title;
       if (dto.description !== undefined) updateData.description = dto.description;
       if (dto.rules !== undefined) updateData.rules = dto.rules;
+      if (dto.announcementUrl !== undefined) updateData.announcementUrl = dto.announcementUrl;
+      if (dto.certificateTemplateUrl !== undefined) updateData.certificateTemplateUrl = dto.certificateTemplateUrl;
+      if (dto.certificateTextColor !== undefined) updateData.certificateTextColor = dto.certificateTextColor;
+      if (dto.certificateTextSize !== undefined) updateData.certificateTextSize = dto.certificateTextSize;
+      if (dto.certificateOverlayOpacity !== undefined) updateData.certificateOverlayOpacity = dto.certificateOverlayOpacity;
+      if (dto.certificateContentPadding !== undefined) updateData.certificateContentPadding = dto.certificateContentPadding;
+      if (dto.certificateTopPadding !== undefined) updateData.certificateTopPadding = dto.certificateTopPadding;
+      if (dto.certificateBottomPadding !== undefined) updateData.certificateBottomPadding = dto.certificateBottomPadding;
+      if (dto.certificateBottomPadding !== undefined) updateData.certificateBottomPadding = dto.certificateBottomPadding;
+      if (dto.certificateTopOffsetX !== undefined) updateData.certificateTopOffsetX = dto.certificateTopOffsetX;
+      if (dto.certificateBottomOffsetX !== undefined) updateData.certificateBottomOffsetX = dto.certificateBottomOffsetX;
+      if (dto.socialPostUrl !== undefined) updateData.socialPostUrl = dto.socialPostUrl;
       if (dto.deadline !== undefined) updateData.deadline = new Date(dto.deadline);
 
       if (Object.keys(updateData).length > 0) {
@@ -128,7 +154,19 @@ export class EventsService {
 
       return tx.event.findUnique({
         where: { id },
-        include: { criteria: true, createdBy: { select: { id: true, name: true, email: true } }, juryMembers: { include: { jury: { select: { id: true, name: true, email: true } } } } },
+        include: {
+          criteria: true,
+          createdBy: { select: { id: true, name: true, email: true } },
+          juryMembers: { include: { jury: { select: { id: true, name: true, email: true } } } },
+          submissions: {
+            include: {
+              scores: true,
+              juryComments: {
+                include: { jury: { select: { id: true, name: true } } },
+              },
+            },
+          },
+        },
       });
     });
   }
@@ -137,6 +175,10 @@ export class EventsService {
     await this.checkOwnership(id, user);
 
     return this.prisma.$transaction(async (tx) => {
+      const submissionIds = (await tx.submission.findMany({ where: { eventId: id }, select: { id: true } })).map((s) => s.id);
+      if (submissionIds.length > 0) {
+        await tx.juryComment.deleteMany({ where: { submissionId: { in: submissionIds } } });
+      }
       const criteriaIds = (await tx.criteria.findMany({ where: { eventId: id }, select: { id: true } })).map((c) => c.id);
       if (criteriaIds.length > 0) {
         await tx.score.deleteMany({ where: { criteriaId: { in: criteriaIds } } });

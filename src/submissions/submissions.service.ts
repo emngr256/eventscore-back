@@ -42,7 +42,7 @@ export class SubmissionsService {
       where: { captainId: userId },
       include: {
         event: {
-          select: { id: true, title: true },
+          select: { id: true, title: true, certificateTemplateUrl: true, announcementUrl: true, socialPostUrl: true },
         },
         scores: {
           include: {
@@ -50,6 +50,12 @@ export class SubmissionsService {
               select: { id: true, name: true, maxScore: true },
             },
           },
+        },
+        juryComments: {
+          include: {
+            jury: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -83,6 +89,12 @@ export class SubmissionsService {
         captain: {
           select: { id: true, name: true },
         },
+        juryComments: {
+          include: {
+            jury: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -95,6 +107,7 @@ export class SubmissionsService {
         status: s.status,
         createdAt: s.createdAt,
         scores: s.scores,
+        juryComments: s.juryComments,
       };
       if (event.anonymous && user.role === Role.JURY) {
         return base;
@@ -108,7 +121,7 @@ export class SubmissionsService {
       where: { id },
       include: {
         captain: { select: { name: true } },
-        event: { select: { title: true, deadline: true } },
+        event: { select: { title: true, deadline: true, certificateTemplateUrl: true, certificateTextColor: true, certificateTextSize: true, certificateOverlayOpacity: true, certificateContentPadding: true, certificateTopPadding: true, certificateBottomPadding: true, certificateTopOffsetX: true, certificateBottomOffsetX: true } },
         scores: { take: 1 },
       },
     });
@@ -140,6 +153,15 @@ export class SubmissionsService {
       participantName: submission.captain.name,
       teamName: submission.teamName,
       eventTitle: submission.event.title,
+      certificateTemplateUrl: submission.event.certificateTemplateUrl,
+      certificateTextColor: submission.event.certificateTextColor,
+      certificateTextSize: submission.event.certificateTextSize,
+      certificateOverlayOpacity: submission.event.certificateOverlayOpacity,
+      certificateContentPadding: submission.event.certificateContentPadding,
+      certificateTopPadding: submission.event.certificateTopPadding,
+      certificateBottomPadding: submission.event.certificateBottomPadding,
+      certificateTopOffsetX: submission.event.certificateTopOffsetX,
+      certificateBottomOffsetX: submission.event.certificateBottomOffsetX,
       date: submission.createdAt,
     };
   }
@@ -157,6 +179,9 @@ export class SubmissionsService {
       throw new ForbiddenException('You can only delete your own submissions');
     }
 
+    await this.prisma.juryComment.deleteMany({
+      where: { submissionId: id },
+    });
     await this.prisma.score.deleteMany({
       where: { submissionId: id },
     });
